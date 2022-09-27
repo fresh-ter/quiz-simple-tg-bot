@@ -1,0 +1,3 @@
+[submodule "Penger"]
+	path = Penger
+	url = https://github.com/mad-penguins/Penger.git
