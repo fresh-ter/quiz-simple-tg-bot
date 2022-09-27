@@ -131,3 +131,4 @@ dmypy.json
 # Bot
 token.txt
 quiz-tg-bot.sqlite3
+tasks.json
