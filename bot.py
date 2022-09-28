@@ -79,7 +79,7 @@ def help_c(data):
 
 
 def me_c(data):
-    message = "{ Информация участника }\n\n"
+    message = "{ Информация об игроке }\n\n"
 
     u = db.getUser(data['sender_id'])
     if u is not None:
