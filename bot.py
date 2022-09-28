@@ -15,7 +15,7 @@ max_score = 0
 def send_task(tg_id):
     u = db.getUser(tg_id)
 
-    message = "--->  Task # " + str(u.task_id+1) + '  <---\n\n'
+    message = "---> Задачка # " + str(u.task_id+1) + '  <---\n\n'
     message += tasks[u.task_id].get('text')
 
     bot.sendMessage(tg_id, message)
@@ -25,8 +25,8 @@ def registration_user(tg_id):
     db.createUser(tg_id)
     u = db.getUser(tg_id)
 
-    message = "Successful registration.\n\n"
-    message += "Your ID: " + str(u.id)
+    message = "Добро пожаловать на викторину!\n\n"
+    message += "Ваш ID: " + str(u.id)
     bot.sendMessage(tg_id, message)
 
     sleep(0.2)
@@ -35,10 +35,6 @@ def registration_user(tg_id):
     m += "\n#new"
     bot.sendMessageToMainChat(m)
 
-    sleep(0.2)
-
-    send_task(tg_id)
-
 
 def start_c(data):
     tg_id = data['sender_id']
@@ -46,9 +42,15 @@ def start_c(data):
 
     if u is None:
         registration_user(tg_id)
+        sleep(0.1)
+        help_c(data)
+        sleep(0.1)
+        me_c(data)
+        sleep(0.2)
+        send_task(tg_id)
     else:
         if u.task_id < number_of_tasks:
-            message = "We continue:"
+            message = "Продолжаем:"
             bot.sendMessageToChat(data, message)
             sleep(0.2)
             send_task(tg_id)
@@ -58,21 +60,42 @@ def start_c(data):
 
 
 def help_c(data):
-    message = "This is Help!\n\n"
+    message = "{ Справка }\n\n"
+    message += 'Для начала участия в викторине надо нажать /start\n\n'
+    message += 'Каждая задачка имеет несколько вариантов ответа. '
+    message += 'Только один из них является верным.\n\n'
+    message += 'Чтобы ответить, нужно отправить боту номер варианта ответа '
+    message += '- цифру от 0 до 9.\n\n'
+    message += 'На одну задачку ответить можно только один раз. \n\n'
+    message += 'При ответе Вы увидите результат ответа,\n'
+    message += 'а затем текст следующей задачки.\n\n'
+    message += 'После прохождения викторины можете обратиться к организаторам '
+    message += 'и получить приз, в зависимости от количества набранных баллов.\n\n'
+    message += 'Чтобы повторно получить текст задачки, на которой Вы остановились:\n-> нажмите /start\n\n'
+    message += 'Чтобы узнать свои результаты\n-> нажмите /me\n\n'
+    message += 'Удачного прохождения и приятной игры! :-)'
 
     bot.sendMessageToChat(data, message)
 
 
 def me_c(data):
-    message = "This is Me!\n\n"
+    message = "{ Информация участника }\n\n"
 
     u = db.getUser(data['sender_id'])
     if u is not None:
         if u.task_id == number_of_tasks:
-            message += 'You have completed all the tasks.\n\n'
-        message += "Your ID: " + str(u.id) + '\n\n'
-        message += "Your Score: " + str(u.score)
+            message += 'Вы ответили на все задачки в викторине!\n'
+            message += 'Можете сообщить результаты организаторам и получить приз :-)\n\n'
+        elif u.task_id < number_of_tasks:
+            message += 'На данный момент у Вас есть задачки без ответа.\n'
+            message += 'Вы остановились на вопросе №' + str(u.task_id+1) + '.\n\n'
+        message += "ID: " + str(u.id) + '\n'
+        message += "Счёт: " + str(u.score)
         message += "\\" + str(max_score)
+        message += '\n\n{ -------------------- }'
+    else:
+        message += 'Вы не зарегистированы.\n'
+        message += 'Для начала прохождения викторины нажмите /start'
 
     bot.sendMessageToChat(data, message)
 
@@ -89,9 +112,9 @@ def empty(data):
         if u.task_id < number_of_tasks:
             if str(tasks[u.task_id].get('answer')) == text:
                 u.score += tasks[u.task_id].get('cost', 1)
-                bot.sendMessageToChat(data, 'Correct answer!\n:-)')
+                bot.sendMessageToChat(data, 'Ответ правильный!\n:-)')
             else:
-                bot.sendMessageToChat(data, 'Wrong answer!\n:-(')
+                bot.sendMessageToChat(data, 'Ответ неправильный!\n:-(')
 
             sleep(0.2)
 
@@ -106,16 +129,19 @@ def empty(data):
                 m += "\\" + str(max_score)
                 m += "\n#end"
                 bot.sendMessageToMainChat(m)
-
                 sleep(0.2)
-
                 me_c(data)
             else:
                 send_task(tg_id)
         else:
-            bot.sendMessageToChat(data, 'You have already solved all the tasks!')            
+            bot.sendMessageToChat(data, 'Вы уже ответили на все задачки.')
+            sleep(0.2)
+            me_c(data)            
     else:
-        bot.sendMessageToChat(data, 'I do not understand...')
+        message = "Не понимаю... :-(\n"
+        message += 'Ответом на задачку является цифра (0-9).\n'
+        message += 'Для дополнительной справки:\n-> нажмите /help'
+        bot.sendMessageToChat(data, message)
 
 
 def main():
