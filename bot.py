@@ -1,5 +1,6 @@
 from Penger.penger import Penger
 
+from sys import argv
 from time import sleep
 import json
 import db
@@ -10,6 +11,7 @@ bot = None
 tasks = {}
 number_of_tasks = 0
 max_score = 0
+serios_mode = False
 
 
 def send_task(tg_id):
@@ -40,6 +42,10 @@ def start_c(data):
     tg_id = data['sender_id']
     u = db.getUser(tg_id)
 
+    if serios_mode and (u is not None):
+        if u.task_id == number_of_tasks:
+            return
+
     if u is None:
         registration_user(tg_id)
         sleep(0.1)
@@ -60,6 +66,12 @@ def start_c(data):
 
 
 def help_c(data):
+    u = db.getUser(data['sender_id'])
+
+    if serios_mode and (u is not None):
+        if u.task_id == number_of_tasks:
+            return
+
     message = "{ Справка }\n\n"
     message += 'Для начала участия в викторине надо нажать /start\n\n'
     message += 'Каждая задачка имеет несколько вариантов ответа. '
@@ -78,10 +90,15 @@ def help_c(data):
     bot.sendMessageToChat(data, message)
 
 
-def me_c(data):
+def me_c(data, is_end_message=False):
     message = "{ Информация об игроке }\n\n"
 
     u = db.getUser(data['sender_id'])
+
+    if serios_mode and (u is not None) and not is_end_message:
+        if u.task_id == number_of_tasks:
+            return
+
     if u is not None:
         if u.task_id == number_of_tasks:
             message += 'Вы ответили на все задачки в викторине!\n'
@@ -105,6 +122,10 @@ def empty(data):
     tg_id = data['sender_id']
 
     u = db.getUser(tg_id)
+
+    if serios_mode and (u is not None):
+        if u.task_id == number_of_tasks:
+            return
 
     if (len(text) == 1) and \
         (text.isdigit()) and \
@@ -130,7 +151,7 @@ def empty(data):
                 m += "\n#end"
                 bot.sendMessageToMainChat(m)
                 sleep(0.2)
-                me_c(data)
+                me_c(data, is_end_message=True)
             else:
                 send_task(tg_id)
         else:
@@ -150,6 +171,11 @@ def main():
     global tasks
     global number_of_tasks
     global max_score
+    global serios_mode
+
+    if '-s' in argv:
+        serios_mode = True
+    print("serios_mode =", serios_mode)
 
     with open('token.txt') as f:
         BOT_TOKEN = f.read().rstrip()
